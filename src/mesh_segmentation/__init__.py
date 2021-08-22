@@ -5,7 +5,8 @@
 bl_info = {
     "name": "Mesh Segmentation",
     "description": "Segments an object and applies an action on each segment",
-    "blender": (2, 80, 0),
+    "version": (0, 4, 0),
+    "blender": (2, 93, 0),
     "category": "Mesh"}
 
 import bpy
@@ -72,7 +73,11 @@ class MeshSegmentation(bpy.types.Operator):
                  ('kmeans++', "k-means++", "Initialization from k-means++")],
         description = "Method to use for initializing centroids for k-means.",
         default = 'liu_zhang')
-
+    
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
+    
     def execute(self, context):
         """Executes the segmentation"""
         if bpy.ops.mesh.separate(type='LOOSE') != {'CANCELLED'}:
@@ -96,14 +101,32 @@ class MeshSegmentation(bpy.types.Operator):
             return {'CANCELLED'}
 
 
+class MeshSegmentation_Menu(bpy.types.Menu):
+    bl_label = 'Segment Mesh'
+    bl_idname = 'OBJECT_MT_segment_mesh'
+
+    def draw(self, context):
+        self.layout.operator(MeshSegmentation.bl_idname)
+
+
+def menu_func(self, context):
+    self.layout.menu(MeshSegmentation_Menu.bl_idname)
+    
+
 def register():
     """Registers the addon in blender"""
+    bpy.utils.register_class(MeshSegmentation_Menu)
     bpy.utils.register_class(MeshSegmentation)
+    
+    bpy.types.VIEW3D_MT_object.append(menu_func)
 
 
 def unregister():
     """Unregisters the addon from blender"""
+    bpy.utils.unregister_class(MeshSegmentation_Menu)
     bpy.utils.unregister_class(MeshSegmentation)
+    
+    bpy.types.VIEW3D_MT_object.remove(menu_func)
 
 
 # developing purpose for registering when run from blender texteditor
